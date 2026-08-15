@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# archivos grandes
+/Actividad01/name.basics.tsv
+/Actividad01/name.basics.tsv.gz
+/Actividad01/*.parquet
+
