@@ -222,3 +222,6 @@ __marimo__/
 /Actividad01/name.basics.tsv.gz
 /Actividad01/*.parquet
 
+# archivos generados por los scripts (se regeneran corriendo los scripts)
+/Actividad02/*.parquet
+

@@ -1,0 +1,25 @@
+{
+    "atributos": [
+        {
+            "descripcion": "año",
+            "informacionAdicional": "",
+            "tipoDeDato": "Number",
+            "recursoRelacionado": "",
+            "nombreDeAtributo": "año"
+        },
+        {
+            "descripcion": "valor",
+            "informacionAdicional": "",
+            "tipoDeDato": "Number",
+            "recursoRelacionado": "",
+            "nombreDeAtributo": "valor"
+        }
+    ],
+    "titulo": "Metadatos de Salario Mínimo Nacional (SMN)",
+    "descripcion": "Según el Art. 1 de la Ley 10449, el salario mínimo es aquel que se considera necesario, en relación a las condiciones económicas que imperan en un lugar, para asegurar al trabajador un nivel de vida suficiente, a fin de proveer a la satisfacción de sus necesidades físicas, intelectuales y morales. Es el \"piso por debajo del cual no puede estar ninguna remuneración\" (Decreto 1534/969).",
+    "calculo": "El Salario Mínimo Nacional lo estipula el Ministerio de Trabajo y Seguridad Social.",
+    "unidad": "Pesos corrientes",
+    "fuente": "INE Salario mínimo nacional",
+    "direccion": "Dirección Nal. de Evaluación y Monitoreo",
+    "comentario": "Para la construcción del indicador se utiliza el SMN publicado por el INE disponible en: http://ine.gub.uy/salario-minimo-nacional. Los datos presentados corresponden al valor del SMN para el 1° de Enero de los años considerados. Se consideran a las personas mayores de 18 años en pesos uruguayos."
+}
