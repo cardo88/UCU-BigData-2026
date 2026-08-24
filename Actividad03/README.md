@@ -90,13 +90,22 @@ Ese archivo contiene una fila por año y es el que se conecta con
 El script también genera:
 
 ```text
+Actividad03/salario_ipc_metricas.parquet
 Actividad03/analisis_salario_ipc.png
 ```
 
-La imagen tiene dos paneles: arriba compara las variaciones anuales del
-salario mínimo y del IPC; abajo muestra el crecimiento real aproximado del
-salario. Las barras verdes indican crecimiento por encima del IPC y las rojas
-indican pérdida aproximada de poder adquisitivo.
+`salario_ipc_metricas.parquet` es la tabla completa ya conectada (salario,
+IPC, variaciones y crecimiento real por año) — es el resultado final para
+consultar o reutilizar después, y por eso **no** se imprime entera en
+consola (28 filas x 9 columnas no se leen cómodo en una terminal). La
+consola solo muestra un resumen de negocio: cuántos años el salario le ganó
+o le perdió al IPC, el crecimiento real promedio, y el mejor/peor año.
+
+`analisis_salario_ipc.png` tiene dos paneles: arriba compara las
+variaciones anuales del salario mínimo y del IPC; abajo muestra el
+crecimiento real aproximado del salario. Las barras verdes indican
+crecimiento por encima del IPC y las rojas indican pérdida aproximada de
+poder adquisitivo.
 
 ## Cómo se conectan los datos
 
@@ -105,7 +114,27 @@ Para obtener una observación anual, el script ordena los registros por fecha y
 conserva el último mes disponible de cada año, normalmente diciembre. Esto
 permite inspeccionar y reutilizar la transformación sin volver a leer el Excel.
 
-Luego ambas fuentes se unen mediante `año`.
+### Alineación de los períodos antes de unir
+
+El salario mínimo rige desde el **1° de enero** de cada año (ver README de
+Actividad 2). Su variación interanual —`salario[N] / salario[N-1] - 1`— cubre
+entonces el período entre el 1° de enero de `N-1` y el 1° de enero de `N`, es
+decir, aproximadamente el **año calendario `N-1` completo**.
+
+Si esa variación se comparara contra el IPC de diciembre del año `N` (como se
+hacía en una primera versión de este script), se estaría comparando el ajuste
+de salario de enero contra una inflación que en su mayor parte todavía no
+había ocurrido cuando se fijó ese salario. Por eso, antes de unir, el año del
+IPC se corre un año hacia adelante: la fila que en `ipc_anual.parquet` dice
+"año 1990" (variación de precios de diciembre de 1989 a diciembre de 1990) se
+une con el salario del "año 1991" (variación de salario de enero de 1990 a
+enero de 1991), que cubre aproximadamente el mismo período.
+
+`ipc_anual.parquet` se guarda **sin** este corrimiento (con el año real de
+cada observación), para que se pueda inspeccionar o reutilizar de forma
+directa. El corrimiento se aplica únicamente al armar la tabla unida
+(`datos`), donde la columna `año_ipc_base` deja explícito qué año de IPC
+quedó asociado a cada fila.
 
 La métrica principal es:
 
@@ -123,9 +152,11 @@ Interpretación:
 ## Limitaciones
 
 Esta métrica es una aproximación. El salario mínimo de la fuente es anual y
-corresponde al valor legal del año, mientras que el IPC es mensual. Una
-comparación más precisa debería usar la fecha exacta de cada ajuste del salario
-mínimo y el IPC correspondiente al mismo período.
+corresponde al valor legal vigente desde el 1° de enero, mientras que el IPC
+es mensual. El corrimiento de un año descrito arriba alinea los períodos a
+nivel anual, pero sigue siendo una aproximación de calendario: no usa la
+fecha exacta de cada ajuste salarial (que en la práctica podría no ser
+siempre el 1° de enero) ni el IPC del mes exacto correspondiente.
 
 Además, la base octubre 2022 = 100 es solamente una escala de referencia: no
 significa que los precios fueran de 100 pesos. Las variaciones porcentuales no
@@ -138,7 +169,11 @@ dependen de esa escala.
 1. lee `salario_minimo_clean.parquet` de Actividad 2;
 2. lee y normaliza el Excel del IPC;
 3. genera `ipc_anual.parquet`;
-4. calcula las métricas solicitadas;
-5. conecta ambos Parquet por año;
-6. genera la gráfica `analisis_salario_ipc.png`;
-7. muestra la tabla y una conclusión en la consola.
+4. calcula las métricas solicitadas (mínimo, máximo, promedio del salario);
+5. conecta ambos Parquet por año (alineando los períodos, ver arriba) y
+   calcula la variación interanual y el crecimiento real aproximado;
+6. guarda la tabla conectada en `salario_ipc_metricas.parquet`;
+7. genera la gráfica `analisis_salario_ipc.png`;
+8. muestra en consola solo el resumen de negocio (años con ganancia/pérdida
+   real, promedio, mejor y peor año) — la tabla completa queda en el
+   Parquet del punto 6, no se imprime entera.

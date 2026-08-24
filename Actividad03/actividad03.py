@@ -21,7 +21,6 @@
 # =============================================================================
 
 import re
-from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -31,6 +30,7 @@ import matplotlib.pyplot as plt
 RUTA_SALARIO = Path("Actividad02/salario_minimo_clean.parquet")
 RUTA_IPC = Path("Actividad03/IPC gral y variaciones_base 2022.xlsx")
 RUTA_IPC_ANUAL = Path("Actividad03/ipc_anual.parquet")
+RUTA_METRICAS = Path("Actividad03/salario_ipc_metricas.parquet")
 
 
 def numero_uruguayo(valor):
@@ -54,31 +54,6 @@ def numero_uruguayo(valor):
         return float(texto)
     except ValueError:
         return None
-
-
-def extraer_ano(valor):
-    """Obtiene el año desde un año numerico o desde una fecha del Excel."""
-    if pd.isna(valor):
-        return None
-
-    if isinstance(valor, (pd.Timestamp,  date)):
-        return valor.year
-
-    if isinstance(valor, (int, float)) and not isinstance(valor, bool):
-        if 1900 <= valor <= 2100:
-            return int(valor)
-        if 1000 <= valor <= 60000:
-            return pd.to_datetime(
-                valor, unit="D", origin="1899-12-30"
-            ).year
-
-    texto = str(valor).strip()
-    coincidencia = re.search(r"(19|20)\d{2}", texto)
-    if coincidencia:
-        return int(coincidencia.group(0))
-
-    numero = numero_uruguayo(valor)
-    return int(numero) if numero is not None else None
 
 
 def leer_salario_minimo():
@@ -120,9 +95,11 @@ def leer_ipc():
     )
     ipc = ipc.dropna(how="all").copy()
 
-    # El periodo viene como una fecha mensual, por ejemplo 1937-07-01.
+    # El periodo viene como una fecha mensual, por ejemplo 1937-07-01. Al
+    # venir ya como fecha real (no como texto ni como numero serial de
+    # Excel), alcanza con pedirle el año a pandas directamente.
     ipc["periodo"] = pd.to_datetime(ipc["periodo"], errors="coerce")
-    ipc["año"] = ipc["periodo"].map(extraer_ano)
+    ipc["año"] = ipc["periodo"].dt.year
     ipc["indice_general"] = ipc["indice_general"].map(numero_uruguayo)
     ipc["ipc_ultimos_12_meses"] = ipc["ipc_ultimos_12_meses"].map(numero_uruguayo)
 
@@ -206,28 +183,32 @@ def main():
     print(f"Maximo: ${salario['salario_minimo'].max():,.2f}")
     print(f"Promedio: ${salario['salario_minimo'].mean():,.2f}")
 
-    # Se usa una clave textual de cuatro digitos para evitar que diferencias
-    # entre int64, Int64 o valores provenientes de fechas impidan la union.
-    salario["clave_ano"] = salario["año"].astype(str).str.extract(
-        r"((?:19|20)\d{2})", expand=False
-    )
-    ipc["clave_ano"] = ipc["año"].astype(str).str.extract(
-        r"((?:19|20)\d{2})", expand=False
-    )
+    # El salario minimo del indicador 10454 rige desde el 1° de enero de
+    # cada año (ver README de Actividad 2). Su variacion interanual, por
+    # lo tanto, cubre el periodo entre el 1° de enero del año N-1 y el 1°
+    # de enero del año N, es decir: aproximadamente el año calendario N-1
+    # completo. Para comparar peras con peras, hay que usarla contra la
+    # inflacion de ESE mismo periodo (el IPC del año N-1), no contra el
+    # IPC de diciembre del año N, que todavia no habia ocurrido cuando se
+    # fijo el salario de enero de N.
+    #
+    # Por eso, antes de unir, se corre el año del IPC un año hacia
+    # adelante: la fila que en ipc_anual dice "año 1990" (variacion de
+    # precios de dic-1989 a dic-1990) pasa a juntarse con el salario del
+    # "año 1991" (variacion de salario de ene-1990 a ene-1991). Sin este
+    # corrimiento, se estaria comparando el ajuste de salario de enero
+    # contra una inflacion que llega hasta 11-12 meses despues.
+    ipc_comparable = ipc.rename(columns={"año": "año_ipc_base"})
+    ipc_comparable["año"] = ipc_comparable["año_ipc_base"] + 1
 
-    datos = salario.merge(ipc, on="clave_ano", how="inner", suffixes=("_salario", "_ipc"))
-    datos["año"] = datos["año_salario"]
+    datos = salario.merge(ipc_comparable, on="año", how="inner")
     if datos.empty:
-        anos_salario = sorted(salario["clave_ano"].dropna().unique())
-        anos_ipc = sorted(ipc["clave_ano"].dropna().unique())
         raise ValueError(
-            "No hay años en común entre las fuentes. "
-            f"Salario: {salario['año'].min()}-{salario['año'].max()}; "
-            f"IPC: {ipc['año'].min()}-{ipc['año'].max()}. "
-            f"Ejemplos salario: {anos_salario[:5]} ... {anos_salario[-5:]}; "
-            f"ejemplos IPC: {anos_ipc[:5]} ... {anos_ipc[-5:]}"
+            "No hay años en común entre las fuentes tras alinear los "
+            f"periodos. Salario: {salario['año'].min()}-{salario['año'].max()}; "
+            f"IPC (corrido +1 año): {ipc_comparable['año'].min()}-"
+            f"{ipc_comparable['año'].max()}."
         )
-    datos = datos.drop(columns=["clave_ano", "año_salario", "año_ipc"])
     datos["variacion_salario_%"] = datos["salario_minimo"].pct_change() * 100
     datos["crecimiento_real_aprox_%"] = (
         (1 + datos["variacion_salario_%"] / 100)
@@ -235,21 +216,47 @@ def main():
         - 1
     ) * 100
 
-    print("\nDATOS CONECTADOS POR AÑO")
-    print(datos.to_string(index=False))
+    # La tabla completa (con las columnas auxiliares de trabajo, como
+    # "periodo" o "año_ipc_base") se guarda en Parquet en vez de
+    # imprimirse entera en consola: es un dato consultable después, no
+    # algo para leer de corrida en 28 filas x 9 columnas cada vez que se
+    # corre el script. La consola muestra solo el resumen de negocio.
+    datos.to_parquet(RUTA_METRICAS, engine="pyarrow", index=False)
+    print(f"\nTabla conectada (salario + IPC + métricas) guardada en: {RUTA_METRICAS}")
+
     generar_grafica(datos)
 
-    print("\nCONCLUSION")
+    crecimiento_real = datos["crecimiento_real_aprox_%"].dropna()
+    anios_con_dato = len(crecimiento_real)
+    anios_ganancia_real = (crecimiento_real > 0).sum()
+    anios_perdida_real = (crecimiento_real < 0).sum()
+
+    print("\nRESUMEN: CRECIMIENTO REAL DEL SALARIO MINIMO (vs. IPC)")
     print(
-        "La union permite comparar el aumento nominal del salario minimo "
-        "con la variacion anual del IPC. La columna "
-        "'crecimiento_real_aprox_%' estima si el salario crecio por encima "
-        "o por debajo de los precios en cada año compartido."
+        f"Años con dato comparable: {anios_con_dato} "
+        f"({datos['año'].iloc[1]}-{datos['año'].iloc[-1]})"
     )
     print(
-        "Esta es una aproximacion: para medir poder adquisitivo con mayor "
-        "precision habria que usar la fecha exacta de cada ajuste salarial "
-        "y el IPC del mismo periodo."
+        f"Años con ganancia real (creció por encima del IPC): {anios_ganancia_real}"
+    )
+    print(
+        f"Años con pérdida real (el IPC le ganó): {anios_perdida_real}"
+    )
+    print(f"Crecimiento real promedio por año: {crecimiento_real.mean():.2f}%")
+    fila_peor = datos.loc[datos["crecimiento_real_aprox_%"].idxmin()]
+    fila_mejor = datos.loc[datos["crecimiento_real_aprox_%"].idxmax()]
+    print(
+        f"Peor año (real): {int(fila_peor['año'])} "
+        f"({fila_peor['crecimiento_real_aprox_%']:.2f}%)"
+    )
+    print(
+        f"Mejor año (real): {int(fila_mejor['año'])} "
+        f"({fila_mejor['crecimiento_real_aprox_%']:.2f}%)"
+    )
+    print(
+        "\nNota: 'crecimiento real' es una aproximación de calendario "
+        "(ver README, sección Limitaciones), no un ajuste con la fecha "
+        "exacta de cada resolución salarial."
     )
 
 
