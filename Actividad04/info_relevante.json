@@ -1,0 +1,10 @@
+{
+  "definicion_legal": "Según el Art. 1 de la Ley 10449, el salario mínimo es aquel que se considera necesario, en relación a las condiciones económicas que imperan en un lugar, para asegurar al trabajador un nivel de vida suficiente, a fin de proveer a la satisfacción de sus necesidades físicas, intelectuales y morales. Es el 'piso por debajo del cual no puede estar ninguna remuneración' (Decreto 1534/969).",
+  "organismo_que_fija_el_valor": "Ministerio de Trabajo y Seguridad Social",
+  "fuente_de_datos_original": "INE Salario Mínimo Nacional",
+  "poblacion_objetivo": "Personas mayores de 18 años",
+  "unidad_de_medida": "Pesos corrientes",
+  "frecuencia_de_actualizacion": "Anual",
+  "periodo_cubierto": "1991-2021",
+  "institucion_publicadora": "Ministerio de Desarrollo Social"
+}
