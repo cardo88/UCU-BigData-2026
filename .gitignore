@@ -231,3 +231,7 @@ __marimo__/
 # archivos generados por los scripts (se regeneran corriendo los scripts)
 /Actividad02/*.parquet
 
+# datasets de IMDb para SQL-00 (se descargan de https://datasets.imdbws.com/)
+/SQL-00/imdbws/*.tsv
+/SQL-00/imdbws/*.tsv.gz
+
