@@ -31,7 +31,15 @@ También se trabaja la relación entre Big Data e Inteligencia Artificial: el vo
 
 ## Contenido del repositorio
 
-Este repositorio contiene los ejercicios prácticos, notebooks y scripts desarrollados a lo largo del curso, incluyendo trabajo con datasets reales (por ejemplo, IMDb), procesamiento de datos con Python y pandas, y ejercicios de profiling y transformación de datos.
+Este repositorio contiene los ejercicios prácticos, scripts y documentación desarrollados a lo largo del curso, organizados por actividad:
+
+- **Actividad00**: práctica introductoria de Python (listas y diccionarios).
+- **Actividad01**: ingesta, profiling y limpieza del dataset `name.basics` de IMDb con Python/pandas.
+- **Actividad02-03**: análisis del Salario Mínimo Nacional y el IPC (ingesta, limpieza, métricas y variación real).
+- **Actividad04**: extracción de información no estructurada embebida en HTML con un LLM.
+- **SQL-00**: práctica de SQL sobre PostgreSQL (Docker), desde consultas básicas hasta importación y optimización de los datasets de IMDb.
+
+Cada carpeta tiene su propio `README.md`/`.md` con el detalle de objetivos, decisiones y resultados de esa actividad.
 
 ## Uso de IA como apoyo
 
@@ -46,4 +54,5 @@ El criterio de resolución, la lógica de cada ejercicio y las decisiones finale
 
 - Python 3, entorno virtual (`.venv`)
 - Librerías principales: pandas, pyarrow, ydata-profiling
+- PostgreSQL 16 + pgAdmin vía Docker (`SQL-00/docker-compose.yml`) para los ejercicios de SQL
 - Herramientas adicionales según los módulos del curso: DuckDB, Spark, Polars
