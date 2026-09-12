@@ -59,6 +59,9 @@ O entrar a la consola interactiva:
 docker exec -it bigdata-postgres psql -U bigdata -d bigdata_db
 ```
 
+El mismo PostgreSQL aloja dos bases: `bigdata_db` (ejercicios 1–4) e `imdb`
+(ejercicio 6, datasets de IMDb). Son independientes.
+
 ## Ejercicios
 
 | # | Tema | Carpeta |
@@ -68,5 +71,5 @@ docker exec -it bigdata-postgres psql -U bigdata -d bigdata_db
 | 3 | `LEFT`/`INNER JOIN`, estudiantes sin inscripciones | [ejercicio3/](ejercicio3/README.md) |
 | 4 | Agregaciones con `GROUP BY` (`COUNT`, `AVG`, `SUM`) | [ejercicio4/](ejercicio4/README.md) |
 | 5 | Metadata de IMDb: modelo conceptual, transaccional vs analítico, qué indexar, particionamiento, visualización | [ejercicio5/](ejercicio5/README.md) |
-| 6 | *(pendiente)* | |
-| 7 | *(pendiente)* | |
+| 6 | Importar los 3 datasets de IMDb a una base nueva `imdb` (`\copy` + tipado + índices) | [ejercicio6/](ejercicio6/README.md) |
+| 7 | Modelar y consultar actor↔película; optimización, vista materializada y `EXPLAIN` | [ejercicio7/](ejercicio7/README.md) |
